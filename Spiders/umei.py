@@ -1,10 +1,16 @@
 import cfg.ConfigurationOperation as myConf
 import SpiderCls.mySpider as myspi
 import os
+import time
 from bs4 import BeautifulSoup
 import re
 from cmnFunc import myFunc as mf
-import time
+from concurrent.futures import ThreadPoolExecutor
+
+
+myHeaders = {
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0"
+}
 
 cfg = {
     'referer':'',
@@ -68,6 +74,7 @@ def subPage(url):
         # print(resourcePageUrl)
         resourcePageUrlList.append(resourcePageUrl)
 
+    # print(resourcePageUrlList)
     # 获取下一页中的所有资源页面网址
     condition = True
     nextPageSoup = soup
@@ -75,6 +82,7 @@ def subPage(url):
         index +=1
         # print(resourcePageUrlList)
         yield resourcePageUrlList
+        resourcePageUrlList.clear()
         print('第{0}页正在处理'.format(index))
         nextPageSoup,nextPageItemsList = getResourcePageUrlOfNextPage(spi,nextPageSoup)
         for item in nextPageItemsList:
@@ -84,29 +92,46 @@ def subPage(url):
         if nextPageItemsList is None:
             condition=False
         else:
-            # condition=False
             # time.sleep(1)
             continue
 
+def getResource(spider:myspi.MySpider,soup:BeautifulSoup,justfilename):
+    imgSrc = soup.find('div',attrs={'class':r"big-pic"}).find('img').attrs['src']
+    imgContent = spider.get(imgSrc)
+    print("imgSrc:",imgSrc)
+    title = soup.find('h1').string
+    fileExtension = imgSrc.split('.')[-1]
+    filePath = 'output/img/' + title+'/'+justfilename+'.'+fileExtension
+    print("filePath:",filePath)
 
+    mf.creatDir(filePath)
+    spider.save(filePath,imgContent)
+    return imgSrc
 
-
-def resourcePage():
+def getNextResourcePageUrl(soup:BeautifulSoup):
     pass
 
-def mainPro():
+
+def resourcePage(url:str):
+    spi,sp = mf.creatSpiderAndParseBs4(url,headers=myHeaders)
+    firstFileName = url.split('/')[-1].split('.')[0]
+    imgSrc = getResource(spi,sp,firstFileName)
+    # getNextPageUrl(sp)
+
+def mainProcess():
     getCfg()
     subList = mainPage()
-    # print(subList)
     url_xingganmeinv = subList[0]
     resourceUrlGen = subPage(url_xingganmeinv)
-    # print(resourceUrlGen)
-    # time.sleep(100)
 
 
-    mf.creatDir('output')
-    for i in range(20):
+    mf.creatDir('output/img')
+    for i in range(2):
         resourceUrlList = next(resourceUrlGen)
-        with open('./output/resourceUrlList.txt','w+',encoding='utf-8') as f:
-            for url in '\n'.join(resourceUrlList):
-                f.write(str(url))
+        # print(resourceUrlList)
+        # with open('./output/resourceUrlList.txt','w+',encoding='utf-8') as f:
+        #     for url in '\n'.join(resourceUrlList):
+        #         f.write(str(url))
+        with ThreadPoolExecutor(30) as t:
+            for url in resourceUrlList:
+                t.submit(resourcePage,url)

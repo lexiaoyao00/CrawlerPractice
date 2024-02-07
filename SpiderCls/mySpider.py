@@ -18,12 +18,12 @@ class MySpider():
     def session(self):
         return self._session
 
-    def get(self,url):
-        self._response = requests.get(url)
+    def get(self,url,**kwargs):
+        self._response = requests.get(url,**kwargs)
         return self._response
 
-    def post(self,url,data=None, json=None):
-        return self._session.post(url,data,json)
+    def post(self,url,data=None, json=None,**kwargs):
+        return self._session.post(url,data,json,**kwargs)
 
     def save(self,filename:str,fileContent=None):
         if fileContent is None:

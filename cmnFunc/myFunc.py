@@ -6,14 +6,14 @@ from bs4 import BeautifulSoup
 def creatDir(path):
     if os.path.exists(path):
         return
-    elif not os.path.isdir(path):
-        os.makedirs(path)
+    # elif not os.path.isdir(path):
+    #     os.makedirs(path)
     else:
-        pass
+        os.makedirs(os.path.dirname(path))
 
-def creatSpiderAndParseBs4(url):
+def creatSpiderAndParseBs4(url,headers=None):
     spider = myspi.MySpider()
-    res =  spider.get(url)
+    res =  spider.get(url,headers=headers)
     res.encoding = 'utf-8'
     soup = BeautifulSoup(res.text,'lxml')
 
