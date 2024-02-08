@@ -17,7 +17,8 @@ g_cfg = {
     'resourceDir':'output',
     'referer':'',
     'url':'',
-    'output':''
+    'output':'',
+    'maxPagenumber':0
 }
 
 def getCfg():
@@ -28,10 +29,13 @@ def getCfg():
     referer = conf.get('umei','referer')
     url = conf.get('umei','url')
     output = conf.get('umei','outputDir')
+    maxPagenumber = conf.get('umei','maxPageOfSub')
+
     g_cfg['resourceDir'] = resourceDir
     g_cfg['referer']=referer
     g_cfg['url'] = url
     g_cfg['output'] = output
+    g_cfg['maxPagenumber'] = int(maxPagenumber)
 
 
 def mainPage():
@@ -95,7 +99,7 @@ def subPage(url):
         # print(resourcePageUrlList)
         yield resourcePageUrlList
         resourcePageUrlList.clear()
-        print('第{0}页正在处理'.format(index))
+        print('第{0}小分类页面正在处理'.format(index))
         nextPageSoup,nextPageItemsList = getResourcePageUrlOfNextPage(spi,nextPageSoup)
         for item in nextPageItemsList:
             resourcePageUrl = item
@@ -119,7 +123,7 @@ def getResource(spider:myspi.MySpider,soup:BeautifulSoup,justfilename):
     mf.creatDir(fileFloder)
     filePath = os.path.join(fileFloder,justfilename+'.'+fileExtension)
     # filePath = 'output/img/' + title+'/'+justfilename+'.'+fileExtension
-    print("filePath:",filePath)
+    # print("filePath:",filePath)
     spider.save(filePath,imgContent)
     return fileFloder
 
@@ -128,8 +132,8 @@ def getNextResourcePageUrl(soup:BeautifulSoup):
     referer = g_cfg['referer']
     nextPage = soup.find('div',attrs={'class':'pages'}).find_all('li')[-2]
     finaPage = soup.find('div',attrs={'class':'pages'}).find_all('li')[-1]
-    print("nextPath:",nextPage)
-    print("finaPage:",finaPage)
+    # print("nextPath:",nextPage)
+    # print("finaPage:",finaPage)
     if nextPage.has_attr('class') or finaPage.has_attr('class'):
         nextPathUrl = None
     else:
@@ -162,7 +166,7 @@ def resourcePage(url:str):
         nextFileName = nextUrl.split('/')[-1].split('.')[0]
         fileFloder = getResource(spi,nextsoup,nextFileName)
         count += 1
-        time.sleep(0.2)
+        time.sleep(1)
 
     return count
 
@@ -177,10 +181,19 @@ def mainProcess():
     resourceUrlGen = subPage(url_xingganmeinv)
 
     resourceUrlList = next(resourceUrlGen)
-    resourcePage(resourceUrlList[2])
+    # resourcePage(resourceUrlList[2])
 
-    # for i in range(2):
-    #     resourceUrlList = next(resourceUrlGen)
-    #     with ThreadPoolExecutor(30) as t:
-    #         for url in resourceUrlList:
-    #             t.submit(resourcePage,url)
+    maxCount = g_cfg['maxPagenumber']
+    index = 0
+    while resourceUrlList:
+        if maxCount > 0 and maxCount <= index:
+            print(f"{maxCount}页已下载完毕")
+            exit()
+        
+        with ThreadPoolExecutor(30) as t:
+            for url in resourceUrlList:
+                t.submit(resourcePage,url)
+
+        resourceUrlList = next(resourceUrlGen)
+        index += 1
+
