@@ -3,10 +3,9 @@ from bs4 import BeautifulSoup
 import re
 import os
 
-class MyImg():
-    def __init__(self, filename, path=os.getcwd()):
-        self._filename = filename
-        self._path = path
+class MyPage():
+    def __init__(self,url:str,**kwargs):
+        self._url = url
 
 class MySpider():
     def __init__(self,referer=None):
@@ -30,4 +29,11 @@ class MySpider():
             fileContent=self._response
         with open(filename,'wb+') as f:
             f.write(fileContent.content)
+
+    def moveSpider(self,url:str):
+        res =  self.get(url)
+        res.encoding = 'utf-8'
+        soup = BeautifulSoup(res.text,'lxml')
+
+        return soup
 
