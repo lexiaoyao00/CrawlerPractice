@@ -177,7 +177,7 @@ def mainProcess():
     resourceUrlGen = subPage(url_xingganmeinv)
 
     resourceUrlList = next(resourceUrlGen)
-    resourcePage(resourceUrlList[0])
+    resourcePage(resourceUrlList[2])
 
     # for i in range(2):
     #     resourceUrlList = next(resourceUrlGen)
