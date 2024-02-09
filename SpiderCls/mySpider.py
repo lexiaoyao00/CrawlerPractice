@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import re
 import os
 import random
+from cfg import ConfigurationOperation as mcf
 
 
 user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",
@@ -46,8 +47,8 @@ class SpiderBase():
 
 
     # 解析
-    def urlParse(self,url):
-        resContent = self.get(url)
+    def urlParse(self,url,proxies=None):
+        resContent = self.get(url,proxies)
         if resContent.status_code != 200:
             print("something went wrong,status code of response:",resContent.status_code)
         resContent.encoding = 'utf-8'

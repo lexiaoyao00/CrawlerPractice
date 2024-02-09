@@ -1,4 +1,4 @@
-import cfg.ConfigurationOperation as mc
+import cfg.ConfigurationOperation as mcf
 import SpiderCls.mySpider as myspi
 import os
 import time
@@ -25,7 +25,7 @@ g_cfg = {
 def getCfg():
     """获取配置文件内容"""
     global g_cfg
-    conf = mc.CfgOperation()
+    conf = mcf.CfgOperation()
     resourceDir = conf.get('DEAFULT','resourceDir')
     referer = conf.get('umei','referer')
     url = conf.get('umei','url')
