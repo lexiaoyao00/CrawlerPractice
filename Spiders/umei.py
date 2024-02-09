@@ -2,6 +2,7 @@ import cfg.ConfigurationOperation as myConf
 import SpiderCls.mySpider as myspi
 import os
 import time
+import requests
 from bs4 import BeautifulSoup
 import re
 from cmnFunc import myFunc as mf
@@ -95,11 +96,11 @@ def subPage(url):
     condition = True
     nextPageSoup = soup
     while condition==True:
+        print('第{0}小分类页面已处理'.format(index))
         index +=1
         # print(resourcePageUrlList)
         yield resourcePageUrlList
         resourcePageUrlList.clear()
-        print('第{0}小分类页面正在处理'.format(index))
         nextPageSoup,nextPageItemsList = getResourcePageUrlOfNextPage(spi,nextPageSoup)
         for item in nextPageItemsList:
             resourcePageUrl = item
@@ -143,7 +144,6 @@ def getNextResourcePageUrl(soup:BeautifulSoup):
     return nextPathUrl
 
 
-
 def resourcePage(url:str):
     """处理资源页面,获取大图,返回图片数量"""
     spi,sp = mf.creatSpiderAndParseBs4(url,headers=g_myHeaders)
@@ -180,20 +180,26 @@ def mainProcess():
     url_xingganmeinv = subList[0]
     resourceUrlGen = subPage(url_xingganmeinv)
 
-    resourceUrlList = next(resourceUrlGen)
+    # resourceUrlList = next(resourceUrlGen)
     # resourcePage(resourceUrlList[2])
 
     maxCount = g_cfg['maxPagenumber']
     index = 0
-    while resourceUrlList:
+    flag = True
+    while flag:
         if maxCount > 0 and maxCount <= index:
             print(f"{maxCount}页已下载完毕")
-            exit()
-        
-        with ThreadPoolExecutor(30) as t:
-            for url in resourceUrlList:
-                t.submit(resourcePage,url)
+            flag = False
+            continue
 
         resourceUrlList = next(resourceUrlGen)
+        if resourceUrlList:
+            with ThreadPoolExecutor(30) as t:
+                for url in resourceUrlList:
+                    t.submit(resourcePage,url)
+        else:
+            flag = False
+            continue
+
         index += 1
 
