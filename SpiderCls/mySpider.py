@@ -21,7 +21,7 @@ user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHT
 
 # 基本属性
 class SpiderBase():
-    def __init__(self,gainRuleCss):
+    def __init__(self,gainRuleCss=None):
         self._headers = {
             # "User-Agent": random.choice(user_agent_list),
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -36,6 +36,8 @@ class SpiderBase():
         self._gainElem = {}
         # 网址列表 存放同一系列网址
         self._urlList = []
+
+        self._response = None
 
     # get方法
     def get(self,url:str,proxies=None,**kwargs):
@@ -64,10 +66,14 @@ class SpiderBase():
         resContent = self.get(url,proxies)
         if resContent.status_code != 200:
             print("something went wrong,status code of response:",resContent.status_code)
-            print("The problematic url:",url) 
+            print("The problematic url:",url)
         resContent.encoding = 'utf-8'
         soup = BeautifulSoup(resContent.text,"lxml")
-        nodeList  = soup.select(self._gainRule)
+        if not self._gainRule:
+            print("当前爬虫无解析数据")
+            nodeList = []
+        else:
+            nodeList  = soup.select(self._gainRule)
         # for node in nodeList:
         #     print(node)
         return nodeList
@@ -77,10 +83,27 @@ class SpiderBase():
 
     # 资源保存
     def save(self,filename:str,fileContent=None):
-        if fileContent is None:
+        if fileContent is None and self._response is None:
+            print("请先请求网址")
+            return
+        elif fileContent is None:
             fileContent=self._response
+        else:
+            pass
+
         with open(filename,'wb+') as f:
             f.write(fileContent.content)
+
+    #用来保存视频之类的大文件
+    def save_bigFlow(self,fielname:str,url:str,proxies=None,**kwargs):
+        r = self.get(url=url,proxies=proxies,stream = True,**kwargs)
+        f = open(fielname,'wb+')
+        for chunk in r.iter_content(chunk_size=512):
+            if chunk:
+                f.write(chunk)
+
+        f.close()
+
 
 class SpiderSecend(SpiderBase):
     def initSpider(self,url):

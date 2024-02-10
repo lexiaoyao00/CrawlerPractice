@@ -109,7 +109,7 @@ class Database:
         field: 查询结果返回哪些字段，多个用逗号分隔，可选参数，默认返回所有字段
         返回: 成功返回一条数据的字段名与值的一维字典，失败返回False"""
 
-        sql = 'SELECT ' + field + ' FROM ' + table + ' WHERE ' + factor_str +';'
+        sql = 'SELECT ' + field + ' FROM ' + table + ' WHERE ' + factor_str
         try:
             with self.__conn.cursor() as cursor:
                 cursor.execute(sql)
