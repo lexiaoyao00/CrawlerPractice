@@ -4,6 +4,7 @@ import re
 import os
 import random
 from cfg import ConfigurationOperation as mcf
+import time
 
 
 user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",
@@ -19,17 +20,18 @@ user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHT
 
 # 基本属性
 class SpiderBase():
-    def __init__(self,gainRuleCss,gainElem={}):
+    def __init__(self,gainRuleCss):
         self._headers = {
             "User-Agent": random.choice(user_agent_list),
-            'Connection': 'close'
+            'Connection': 'close',
+            "Cookie":"zh_choose=s; zh_choose=s; _pk_id.5.6a12=94f02e8f6a5092ad.1707481555.; sitetips=1"
         }
         # 新建会话
         self._session = requests.Session()
         # 解析规则 css选择器 如 div.big_pic
         self._gainRule = gainRuleCss
         # 标签列表 存放需要的标签 如<img src="example.jpg">
-        self._gainElem = gainElem
+        self._gainElem = {}
         # 网址列表 存放同一系列网址
         self._urlList = []
 
@@ -38,8 +40,16 @@ class SpiderBase():
         kwargs.setdefault("allow_redirects", True)
 
         proxies = proxies or {}
-        self._response = self._session.get(url,headers=self._headers,proxies=proxies,**kwargs)
-        return self._response
+        retry_count = 5
+        while retry_count>0:
+            try:
+                self._response = self._session.get(url,headers=self._headers,proxies=proxies,**kwargs)
+                return self._response
+            except Exception:
+                retry_count -=1
+                time.sleep(1)
+
+        return requests.Response()
 
     # post方法
     def post(self,url,data=None, json=None,**kwargs):
