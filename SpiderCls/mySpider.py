@@ -15,14 +15,16 @@ user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHT
                     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36",
                     "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)",
                     "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.15) Gecko/20110303 Firefox/3.6.15",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0"
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
                     ]
 
 # 基本属性
 class SpiderBase():
     def __init__(self,gainRuleCss):
         self._headers = {
-            "User-Agent": random.choice(user_agent_list),
+            # "User-Agent": random.choice(user_agent_list),
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             'Connection': 'close',
             "Cookie":"zh_choose=s; zh_choose=s; _pk_id.5.6a12=94f02e8f6a5092ad.1707481555.; sitetips=1"
         }
@@ -47,7 +49,8 @@ class SpiderBase():
                 return self._response
             except Exception:
                 retry_count -=1
-                time.sleep(1)
+                time.sleep(3)
+                print("尝试重新连接")
 
         return requests.Response()
 
@@ -61,6 +64,7 @@ class SpiderBase():
         resContent = self.get(url,proxies)
         if resContent.status_code != 200:
             print("something went wrong,status code of response:",resContent.status_code)
+            print("The problematic url:",url) 
         resContent.encoding = 'utf-8'
         soup = BeautifulSoup(resContent.text,"lxml")
         nodeList  = soup.select(self._gainRule)
