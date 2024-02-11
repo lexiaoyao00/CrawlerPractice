@@ -114,7 +114,10 @@ class Database:
             with self.__conn.cursor() as cursor:
                 cursor.execute(sql)
             self.__conn.commit()
-            return cursor.fetchall()[0]
+            if cursor.fetchall():
+                return cursor.fetchall()[0]
+            else:
+                return cursor.fetchall()
         except pymysql.Error as e:
             return False
 

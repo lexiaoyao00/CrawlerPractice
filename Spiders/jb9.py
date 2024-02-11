@@ -183,7 +183,7 @@ class JB9:
             insert_id = conn.insert("jb9_posts",val_obj_post)
 
         return insert_id
-    
+
     # 保存图片链接到数据库
     def saveImgsLink(self,conn:db,post_title:str):
         val_obj_imgs = {
@@ -262,21 +262,47 @@ class JB9:
 
             print("当前存入的图片已保存完毕")
 
+    #保存一视频到本地
+    def saveOneVideoTlLocal(self,url:str,title,proxies=None):
+        spi_video = SpiderBase()
+        filepath = os.path.join("output","jb9",title)
+        mf.creatDir(filepath)
+        filename = os.path.join(filepath,url.split("/")[-1])
+        spi_video.save_bigFlow(fielname=filename,url=url,proxies=proxies)
+
     # 保存当前存入的视频
     def saveVideosToLocal(self,title,proxies=None):
-        spi_video = SpiderBase()
         if not self._videos:
             print("当前对象未获取视频链接")
         else:
             for u in self._videos:
-                filepath = os.path.join("output","jb9",title)
-                mf.creatDir(filepath)
-                filename = os.path.join(filepath,u.split("/")[-1])
-                spi_video.save_bigFlow(fielname=filename,url=u,proxies=proxies)
+                self.saveOneVideoTlLocal(url=u,title=title,proxies=proxies)
 
             print("当前存入的视频已保存完毕")
 
 
+def testProscess():
+
+    my_dbcfg = mf.getDBCfg()
+    print("database config:",my_dbcfg)
+    my_db = db(my_dbcfg)
+
+    my_cfg = mcf.CfgOperation()
+    addr = my_cfg.get("DEAFULT","proxyGet")
+    # print("addr:",addr)
+
+    j = JB9()
+    j.getCfg(section="jb9")
+
+    proxies = getProxy(addr)
+    print("proxies:",proxies)
+
+    j.getPosts(url="https://www.jb9.es/renti/page/9",proxies=proxies)
+    # num = len(j._postsLinks)
+    # for i in range(num):
+    #     print("标题:"+j._postTitles[i] + " 链接：" + j._postsLinks[i])
+
+    j.savePostsLink(conn=my_db)
 
 
 
@@ -301,14 +327,15 @@ def mainProcess():
         print("proxies:",proxies)
 
         flg = j.getNextPageOfPosts(j._postsPages[page_index])
-        time.sleep(0.5)
+        time.sleep(2)
         j.getPosts(j._postsPages[page_index],proxies=proxies)
+        print("正在保存帖子链接")
         j.savePostsLink(my_db)
 
         post_index = 0
         post_num = len(j._postsLinks)
         # TODO 测试完记得删掉这行
-        post_num = 3
+        # post_num = 3
         while post_index < post_num:
             title = j._postTitles[post_index]
             link = j._postsLinks[post_index]
@@ -318,26 +345,28 @@ def mainProcess():
             j.getImgsOfResource(url =link ,proxies=proxies)
             j.getVideoOfResource(url =link,proxies=proxies)
 
-            # print("正在保存视频链接到数据库")
-            # j.saveVideosLink(my_db,title)
-            # print("正在保存图片链接到数据库")
-            # j.saveImgsLink(my_db,title)
+            print("正在保存视频链接到数据库")
+            j.saveVideosLink(my_db,title)
+            print("正在保存图片链接到数据库")
+            j.saveImgsLink(my_db,title)
 
 
-            thread_svtl = threading.Thread(target=j.saveVideosToLocal,kwargs ={"title":title,"proxies":proxies})
-            print("正在保存视频")
-            thread_svtl.start()
-            print("正在保存图片")
-            j.saveImgsToLocal(title=title,proxies=proxies)
+            # thread_svtl = threading.Thread(target=j.saveVideosToLocal,kwargs ={"title":title,"proxies":proxies})
+            # print("正在保存视频")
+            # thread_svtl.start()
+            # print("正在保存图片")
+            # j.saveImgsToLocal(title=title,proxies=proxies)
 
             # 等待线程结束
-            thread_svtl.join()
+            # thread_svtl.join()
 
             post_index+=1
 
             # 清除当前帖子的媒体信息
             j._imgs.clear()
             j._videos.clear()
+            time.sleep(1)
+
 
 
         # 清除当前页面中的帖子信息
@@ -345,7 +374,7 @@ def mainProcess():
         j._postTitles.clear()
 
         # TODO 测试完记得删掉这行
-        flg = False
+        # flg = False
 
 
     print("page number:",len(j._postsPages))
