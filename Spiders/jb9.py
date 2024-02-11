@@ -6,6 +6,8 @@ import requests
 import time
 import js2py
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 #jb9网站js Base64.decode 返回decode函数
 def Base64DeCode(filename):
@@ -36,6 +38,15 @@ class JB9:
         "referer":"",
         "url":""
     }
+
+    rule_attrs = [
+        "posts",
+        "nextPageOfPosts",
+        "imgs",
+        "video",
+        "videoMenu"
+    ]
+
     def __init__(self) -> None:
         # self._fistPageUrl = None
         self._rules = {}
@@ -46,6 +57,8 @@ class JB9:
         self._videos =[]
         #视频网址解码函数
         self._funcDecode = Base64DeCode(r"js/jb9.js")
+
+        self._setGainRules()
     # def creatSpider(self):
     #     spider = SpiderBase()
     def getCfg(self,section="DEAFULT"):
@@ -55,11 +68,23 @@ class JB9:
         self._config["url"] = conf.get(section,"url")
         self._postsPages.append(self._config["url"])
 
+
+    def _setGainRules(self):
+        rule_posts= "div.post.grid.grid-zz div.img a"
+        rule_nextPost = "li.next-page a"
+        rule_imgs = "div.gallery-item.gallery-fancy-item a"
+        rule_video = "div.article-video div"
+        rule_videoMenu = "div.article-video div.videos-menu a"
+
+        self._rules[self.rule_attrs[0]] = rule_posts
+        self._rules[self.rule_attrs[1]] = rule_nextPost
+        self._rules[self.rule_attrs[2]] = rule_imgs
+        self._rules[self.rule_attrs[3]] = rule_video
+        self._rules[self.rule_attrs[4]] = rule_videoMenu
+
     # 获取大分类页面的帖子链接和标题
     def getPosts(self,url,proxies=None):
-        rule = "div.post.grid.grid-zz div.img a"
-        self._rules['post'] = rule
-        spi_imgPost = SpiderBase(self._rules['post'])
+        spi_imgPost = SpiderBase(self._rules[self.rule_attrs[0]])
         links = spi_imgPost.urlParse(url=url,proxies=proxies)
         postsCount = 0
         if not links:
@@ -81,9 +106,7 @@ class JB9:
 
     # 获取大分类页面的下一页
     def getNextPageOfPosts(self,url,proxies=None):
-        rule = "li.next-page a"
-        self._rules["nextPOP"] = rule
-        spi_postsPage = SpiderBase(self._rules["nextPOP"])
+        spi_postsPage = SpiderBase(self._rules[self.rule_attrs[1]])
         linkList = spi_postsPage.urlParse(url=url,proxies=proxies)
         existsFlag = True
         if linkList:
@@ -97,9 +120,7 @@ class JB9:
 
     # 获取资源页的图片链接
     def getImgsOfResource(self,url,proxies=None):
-        rule = "div.gallery-item.gallery-fancy-item a"
-        self._rules["imgs"] = rule
-        spi_imgs = SpiderBase(self._rules['imgs'])
+        spi_imgs = SpiderBase(self._rules[self.rule_attrs[2]])
         img_links = spi_imgs.urlParse(url=url,proxies=proxies)
 
         # print(img_links)
@@ -111,26 +132,37 @@ class JB9:
             print("当前帖子中未找到图片")
 
         print("当前帖子找到图片 ",len(img_links)," 张")
-        return len(img_links)
+        return len(self._imgs)
 
     # 获取资源页的视频链接
     def getVideoOfResource(self,url,proxies=None):
-        rule = "div.article-video div"
-        self._rules["videos"] = rule
-        spi_postsPage = SpiderBase(self._rules["videos"])
-        videos = spi_postsPage.urlParse(url=url,proxies=proxies)
-        if videos:
-            # print("videos:",videos)
-            # print("key:",videos[0]['data-key'])
-            key = videos[0]['data-key']
-            videoUrl = self._funcDecode(key)
-            print("当前帖子中找到视频")
-            self._videos.append(videoUrl)
-        else:
-            print("当前帖子中未找到视频")
-            # self._videos.append("")
+        spi_videoMenu = SpiderBase(self._rules[self.rule_attrs[4]])
+        videoMenu = spi_videoMenu.urlParse(url=url,proxies=proxies)
 
-        return len(videos)
+        if videoMenu:
+            for a in videoMenu:
+                url_videoIndex = a["href"]
+                spi_videos = SpiderBase(self._rules[self.rule_attrs[3]])
+                videos = spi_videos.urlParse(url=url_videoIndex,proxies=proxies)
+                key = videos[0]["data-key"]
+                videoUrl = self._funcDecode(key)
+                self._videos.append(videoUrl)
+            
+            print("当前帖子中找到视频")
+
+        else:
+            spi_video = SpiderBase(self._rules[self.rule_attrs[3]])
+            videos = spi_video.urlParse(url=url,proxies=proxies)
+            if videos:
+                key = videos[0]['data-key']
+                videoUrl = self._funcDecode(key)
+                print("当前帖子中找到视频")
+                self._videos.append(videoUrl)
+            else:
+                print("当前帖子中未找到视频")
+                # self._videos.append("")
+
+        return len(self._videos)
 
     # 保存帖子链接到数据库
     def savePostsLink(self,conn:db):
@@ -210,18 +242,23 @@ class JB9:
 
         return insert_id
 
+    #保存一个图片到本地
+    def saveOneImgTlLocal(self,url:str,title,proxies=None):
+        spi_img = SpiderBase()
+        spi_img.get(url=url,proxies=proxies)
+        filepath = os.path.join("output","jb9",title)
+        mf.creatDir(filepath)
+        filename = os.path.join(filepath,url.split("/")[-1])
+        spi_img.save(filename)
+
     # 保存当前存入的图片
     def saveImgsToLocal(self,title,proxies=None):
-        spi_img = SpiderBase()
         if not self._imgs:
             print("当前对象未获取图片链接")
         else:
-            for u in self._imgs:
-                spi_img.get(url=u,proxies=proxies)
-                filepath = os.path.join("output","jb9",title)
-                mf.creatDir(filepath)
-                filename = os.path.join(filepath,u.split("/")[-1])
-                spi_img.save(filename)
+            with ThreadPoolExecutor(30) as t:
+                for u in self._imgs:
+                    t.submit(self.saveOneImgTlLocal,u,title,proxies)
 
             print("当前存入的图片已保存完毕")
 
@@ -270,6 +307,7 @@ def mainProcess():
 
         post_index = 0
         post_num = len(j._postsLinks)
+        # TODO 测试完记得删掉这行
         post_num = 3
         while post_index < post_num:
             title = j._postTitles[post_index]
@@ -280,13 +318,20 @@ def mainProcess():
             j.getImgsOfResource(url =link ,proxies=proxies)
             j.getVideoOfResource(url =link,proxies=proxies)
 
-            # j.saveImgsLink(my_db,title)
+            # print("正在保存视频链接到数据库")
             # j.saveVideosLink(my_db,title)
+            # print("正在保存图片链接到数据库")
+            # j.saveImgsLink(my_db,title)
 
+
+            thread_svtl = threading.Thread(target=j.saveVideosToLocal,kwargs ={"title":title,"proxies":proxies})
+            print("正在保存视频")
+            thread_svtl.start()
             print("正在保存图片")
             j.saveImgsToLocal(title=title,proxies=proxies)
-            print("正在保存视频")
-            j.saveVideosToLocal(title=title,proxies=proxies)
+
+            # 等待线程结束
+            thread_svtl.join()
 
             post_index+=1
 
