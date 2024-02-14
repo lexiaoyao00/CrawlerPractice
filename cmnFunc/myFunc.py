@@ -2,7 +2,33 @@ import os
 import SpiderCls.mySpider as myspi
 from bs4 import BeautifulSoup
 import cfg.ConfigurationOperation as mcf
+import requests
 
+def getproxyCgf(section = "proxy"):
+    proxy_cfg ={}
+    conf = mcf.CfgOperation()
+    keys = conf.get_keys(section)
+    for key in keys:
+        proxy_cfg[key] = conf.get(section,key)
+
+    return proxy_cfg
+
+def getProxy(addr=None):
+    proxies = None
+    if addr is None:
+        addr = getproxyCgf()["proxyget"]
+
+    try:
+        res = requests.get(addr)
+    except Exception as e:
+        print("未获取到代理:")
+        print(e)
+        print("********************************")
+    else:
+        proxy = res.json().get('proxy')
+        proxies = {"http":"http://{}".format(proxy)}
+
+    return proxies
 
 def getDBCfg(section="database"):
     dbcfg= {
@@ -45,3 +71,8 @@ def creatSpiderAndParseBs4(url,headers=None):
     soup = BeautifulSoup(res.text,'lxml')
 
     return spider,soup
+
+
+
+def testProscess():
+    getproxyCgf()

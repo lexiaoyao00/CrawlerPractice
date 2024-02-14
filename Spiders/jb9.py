@@ -7,7 +7,7 @@ import time
 import js2py
 import os
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor,as_completed
 
 #jb9网站js Base64.decode 返回decode函数
 def Base64DeCode(filename):
@@ -16,20 +16,6 @@ def Base64DeCode(filename):
         b64 = js2py.eval_js(js)
         decode = b64.decode
         return decode
-
-def getProxy(addr):
-    proxies = None
-    try:
-        res = requests.get(addr)
-    except Exception as e:
-        print("未获取到代理:")
-        print(e)
-        print("********************************")
-    else:
-        proxy = res.json().get('proxy')
-        proxies = {"http":"http://{}".format(proxy)}
-
-    return proxies
 
 class JB9:
     _config = {
@@ -55,6 +41,7 @@ class JB9:
         self._postTitles = []
         self._imgs = []
         self._videos =[]
+        self._proxies = {}
         #视频网址解码函数
         self._funcDecode = Base64DeCode(r"js/jb9.js")
 
@@ -212,7 +199,7 @@ class JB9:
             insert_id = conn.insert("jb9_imgs",val_obj_imgs)
 
         return insert_id
-    
+
     # 保存视频链接到数据库
     def saveVideosLink(self,conn:db,post_title:str):
         val_obj_videos = {
@@ -243,13 +230,22 @@ class JB9:
         return insert_id
 
     #保存一个图片到本地
-    def saveOneImgTlLocal(self,url:str,title,proxies=None):
-        spi_img = SpiderBase()
-        spi_img.get(url=url,proxies=proxies)
-        filepath = os.path.join("output","jb9",title)
-        mf.creatDir(filepath)
-        filename = os.path.join(filepath,url.split("/")[-1])
-        spi_img.save(filename)
+    def saveOneImgTolLocal(self,url:str,title,proxies=None,name=None):
+        try:
+            spi_img = SpiderBase()
+            spi_img.get(url=url,proxies=proxies)
+            filepath = os.path.join("output","jb9",title)
+            mf.creatDir(filepath)
+            if name is None:
+                filename = os.path.join(filepath,url.split("/")[-1])
+            else:
+                filename = os.path.join(filepath,name)
+            spi_img.save(filename)
+
+            return True
+        except Exception as e:
+            print("保存失败：",e)
+            return False
 
     # 保存当前存入的图片
     def saveImgsToLocal(self,title,proxies=None):
@@ -258,17 +254,27 @@ class JB9:
         else:
             with ThreadPoolExecutor(30) as t:
                 for u in self._imgs:
-                    t.submit(self.saveOneImgTlLocal,u,title,proxies)
+                    t.submit(self.saveOneImgTolLocal,u,title,proxies,None)
 
             print("当前存入的图片已保存完毕")
 
     #保存一视频到本地
-    def saveOneVideoTlLocal(self,url:str,title,proxies=None):
-        spi_video = SpiderBase()
-        filepath = os.path.join("output","jb9",title)
-        mf.creatDir(filepath)
-        filename = os.path.join(filepath,url.split("/")[-1])
-        spi_video.save_bigFlow(fielname=filename,url=url,proxies=proxies)
+    def saveOneImgTlLocal(self,url:str,title,proxies=None,name=None):
+        try:
+            spi_video = SpiderBase()
+            filepath = os.path.join("output","jb9",title)
+            mf.creatDir(filepath)
+            if name is None:
+                filename = os.path.join(filepath,url.split("/")[-1])
+            else:
+                filename = os.path.join(filepath,name)
+            spi_video.save_bigFlow(fielname=filename,url=url,proxies=proxies)
+
+            return True
+        except Exception as e:
+            print("保存失败：",e)
+            return False
+
 
     # 保存当前存入的视频
     def saveVideosToLocal(self,title,proxies=None):
@@ -276,34 +282,142 @@ class JB9:
             print("当前对象未获取视频链接")
         else:
             for u in self._videos:
-                self.saveOneVideoTlLocal(url=u,title=title,proxies=proxies)
+                self.saveOneImgTlLocal(url=u,title=title,proxies=proxies,name=None)
 
             print("当前存入的视频已保存完毕")
 
 
-def testProscess():
+    # 访问数据库保存一个视频
+    def saveOneVideosFromDb(self,database:db,num = 0):
+        if num <= 0:
+            index = 0
+        else:
+            index = num
+        # 获取所有未下载视频信息
+        my_db = database
+        sql = """SELECT v.id,v.name,v.link,p.title FROM jb9_videos as v INNER JOIN jb9_posts as p ON (v.posts_id = p.id and v.is_download = 0);"""
+        video_cursor = my_db.get_cursour()
+
+        video_cursor.execute(sql)
+        res = video_cursor.fetchall()[index]
+        # 保存到本地
+        if res:
+            saveSuccess = self.saveOneImgTlLocal(res["link"],res["title"],None,res["name"])
+        else:
+            return False
+        # 更新数据库
+        if saveSuccess:
+            table = "jb9_videos"
+            val_obj = {
+                "is_download":"1",
+            }
+            range_str = f"id = {res['id']}"
+            my_db.update(table=table,val_obj=val_obj,range_str=range_str)
+        else:
+            return False
+
+        return True
+
+
+    # 访问数据库保存一个图片
+    def saveOneImgsFromDb(self,database:db,num=0):
+        if num < 0:
+            index = 0
+        else:
+            index = num
+        # 获取所有未下载图片信息
+        my_db = database
+        sql = """SELECT i.id,i.name,i.link,p.title FROM jb9_imgs as i INNER JOIN jb9_posts as p ON (i.posts_id = p.id and i.is_download = 0);"""
+
+        img_cursor = my_db.get_cursour()
+
+
+        img_cursor.execute(sql)
+        res = img_cursor.fetchall()[index]
+        print(res)
+
+        # 保存到本地
+        if res:
+            saveSuccess = self.saveOneImgTlLocal(res["link"],res["title"],None,res["name"])
+        else:
+            return False
+
+        # 更新数据库
+        if saveSuccess:
+            table = "jb9_imgs"
+            val_obj = {
+                "is_download":"1",
+            }
+            range_str = f"id = {res['id']}"
+            my_db.update(table=table,val_obj=val_obj,range_str=range_str)
+        else:
+            return False
+
+        return True
+
+    # 访问数据库保存多个图片 max_num<=0时无限访问
+    def saveImgsFromDb(self,dbcfg,max_num=0):
+        sql = """SELECT i.id,i.name,i.link,p.title FROM jb9_imgs as i INNER JOIN jb9_posts as p ON (i.posts_id = p.id and i.is_download = 0);"""
+
+        img_db = db(dbcfg)
+        count =0
+        flag = True
+
+        img_cursor = img_db.get_cursour()
+        img_cursor.execute(sql)
+
+
+        batch_num = 30
+        if max_num > 0 and max_num <= batch_num:
+            batch_num = max_num
+
+        pool = ThreadPoolExecutor(batch_num)
+        while flag:
+            if max_num>0 and count >= max_num:
+                flag = False
+                continue
+            res = img_cursor.fetchmany(batch_num)
+
+            handle_list = []
+            for i in range(batch_num):
+                row = res[i]
+                handle = pool.submit(self.saveOneImgTolLocal,row['link'],row['title'],None,row['name'])
+                handle_list.append(handle)
+
+            for future in as_completed(handle_list):
+                save_success = future.result()
+                if not save_success:
+                    flag = False
+                else:
+                    count += 1
+
+            if flag:
+                table = "jb9_imgs"
+                val_obj = {
+                    "is_download":"1",
+                }
+                for i in range(batch_num):
+                    range_str = f"id = {res[i]['id']}"
+                    img_db.update(table=table,val_obj=val_obj,range_str=range_str)
+            else:
+                print("保存图片时发生意外")
+            
+            print("当前图片保存进度：",count,"/",max_num)
+
+        return count
+
+
+
+def saveFromDbProscess():
 
     my_dbcfg = mf.getDBCfg()
     print("database config:",my_dbcfg)
     my_db = db(my_dbcfg)
 
-    my_cfg = mcf.CfgOperation()
-    addr = my_cfg.get("DEAFULT","proxyGet")
-    # print("addr:",addr)
-
     j = JB9()
     j.getCfg(section="jb9")
 
-    proxies = getProxy(addr)
-    print("proxies:",proxies)
-
-    j.getPosts(url="https://www.jb9.es/renti/page/9",proxies=proxies)
-    # num = len(j._postsLinks)
-    # for i in range(num):
-    #     print("标题:"+j._postTitles[i] + " 链接：" + j._postsLinks[i])
-
-    j.savePostsLink(conn=my_db)
-
+    j.saveImgsFromDb(my_dbcfg,300)
 
 
 
@@ -312,10 +426,6 @@ def mainProcess():
     print("database config:",my_dbcfg)
     my_db = db(my_dbcfg)
 
-    my_cfg = mcf.CfgOperation()
-    addr = my_cfg.get("DEAFULT","proxyGet")
-    # print("addr:",addr)
-
     j = JB9()
     j.getCfg(section="jb9")
 
@@ -323,7 +433,7 @@ def mainProcess():
     while flg:
         page_index = len(j._postsPages) - 1
 
-        proxies = getProxy(addr)
+        proxies = mf.getProxy()
         print("proxies:",proxies)
 
         flg = j.getNextPageOfPosts(j._postsPages[page_index])
@@ -349,16 +459,6 @@ def mainProcess():
             j.saveVideosLink(my_db,title)
             print("正在保存图片链接到数据库")
             j.saveImgsLink(my_db,title)
-
-
-            # thread_svtl = threading.Thread(target=j.saveVideosToLocal,kwargs ={"title":title,"proxies":proxies})
-            # print("正在保存视频")
-            # thread_svtl.start()
-            # print("正在保存图片")
-            # j.saveImgsToLocal(title=title,proxies=proxies)
-
-            # 等待线程结束
-            # thread_svtl.join()
 
             post_index+=1
 

@@ -34,6 +34,9 @@ class Database:
         except pymysql.Error as e:
             print('数据库连接失败:', end='')
 
+    def get_cursour(self):
+        return self.__conn.cursor()
+
     # 插入数据到数据表
     def insert(self, table, val_obj):
         """
