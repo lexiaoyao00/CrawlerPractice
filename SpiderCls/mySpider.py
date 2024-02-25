@@ -1,4 +1,5 @@
-import requests
+from curl_cffi import requests
+# import requests
 from bs4 import BeautifulSoup
 import re
 import os
@@ -21,13 +22,14 @@ user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHT
 
 # 基本属性
 class SpiderBase():
-    def __init__(self,gainRuleCss=None):
-        self._headers = {
-            # "User-Agent": random.choice(user_agent_list),
-            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            'Connection': 'close',
-            "Cookie":"zh_choose=s; zh_choose=s; _pk_id.5.6a12=94f02e8f6a5092ad.1707481555.; sitetips=1"
-        }
+    def __init__(self,gainRuleCss=None,headers=None):
+        if headers is None:
+            self._headers = {
+                "User-Agent": random.choice(user_agent_list),
+                # "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+            }
+        else:
+            self._headers = headers
         # 新建会话
         self._session = requests.Session()
         # 解析规则 css选择器 如 div.big_pic
@@ -47,7 +49,7 @@ class SpiderBase():
         retry_count = 5
         while retry_count>0:
             try:
-                self._response = self._session.get(url,headers=self._headers,proxies=proxies,**kwargs)
+                self._response = self._session.get(url,headers=self._headers,proxies=proxies,impersonate="chrome116",**kwargs)
                 return self._response
             except Exception:
                 retry_count -=1
@@ -55,6 +57,20 @@ class SpiderBase():
                 print("尝试重新连接")
 
         return requests.Response()
+    
+    # 拿到网页
+    def getPage(self,url:str,proxies=None,saveFlag = True,filename="test.html"):
+        print("正在获取网页：",url)
+        resContent = self.get(url=url,proxies=proxies)
+        if resContent.text:
+            resContent.encoding = "utf-8"
+            if saveFlag:
+                with open(filename,"w+",encoding="utf-8") as f:
+                    f.write(resContent.text)
+        else:
+            print("未获取到数据")
+
+        return resContent
 
     # post方法
     def post(self,url,data=None, json=None,**kwargs):

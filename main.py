@@ -1,9 +1,11 @@
-from Spiders import umei,jb9
+from Spiders import umei,jb9,danbooru
 from cmnFunc import myFunc as mf
 
 if __name__ == '__main__':
-    test = 'jb9'
+    test = 'danbooru'
     match test:
+        case "danbooru":
+            danbooru.mainProcess()
         case 'test':
             mf.testProscess()
         case 'umei':
