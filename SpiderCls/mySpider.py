@@ -23,6 +23,10 @@ user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHT
 # 基本属性
 class SpiderBase():
     def __init__(self,gainRuleCss=None,headers=None):
+        """
+        gainRuleCss:CSS选择器规则
+        headers:请求头
+        """
         if headers is None:
             self._headers = {
                 "User-Agent": random.choice(user_agent_list),
@@ -40,6 +44,9 @@ class SpiderBase():
         self._urlList = []
 
         self._response = None
+
+    def setGainRule(self, gainRuleCss):
+        self._gainRule = gainRuleCss
 
     # get方法
     def get(self,url:str,proxies=None,**kwargs):
@@ -78,18 +85,19 @@ class SpiderBase():
 
 
     # 解析
-    def urlParse(self,url,proxies=None):
+    def urlParse(self,url,proxies=None,gainRuleCss = None):
+        gainRule = gainRuleCss if gainRuleCss else self._gainRule
         resContent = self.get(url,proxies)
         if resContent.status_code != 200:
             print("something went wrong,status code of response:",resContent.status_code)
             print("The problematic url:",url)
         resContent.encoding = 'utf-8'
         soup = BeautifulSoup(resContent.text,"lxml")
-        if not self._gainRule:
-            print("当前爬虫无解析数据")
+        if gainRule is None:
+            print("当前无解析选择器规则")
             nodeList = []
         else:
-            nodeList  = soup.select(self._gainRule)
+            nodeList  = soup.select(gainRule)
         # for node in nodeList:
         #     print(node)
         return nodeList

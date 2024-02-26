@@ -33,21 +33,34 @@ class PostPage(PostInfo):
     ]
 
 
-    def __init__(self):
+    def __init__(self,postUrl:str):
         super(PostPage, self).__init__()
+        self.url = postUrl
+        self.post_spider = SpiderBase()
         self._setGainRules()
 
     def _setGainRules(self):
         self.GainRules = {}
         self.GainRules[self.rule_attrs[3]] = "ul.general-tag-list li"
+        self.GainRules[self.rule_attrs[5]] = "section#post-information li"
 
-    def obtainImageInformation(self,postUrl:str):
+    def obtainImageTags(self,postUrl:str=None):
+        tags=[]
+        url = postUrl if postUrl else self.url
         rule = self.GainRules[self.rule_attrs[3]]
-        # print(rule)
-        post_spider = SpiderBase(rule)
-        res = post_spider.getPage(postUrl)
-        # lis = post_spider.urlParse(postUrl,clash_proxies)
-        # print(lis)
+        node_list = self.post_spider.urlParse(url=url,gainRuleCss=rule)
+
+        tags = [a.select_one("a.search-tag").text for a in node_list]
+        # print(tags)
+
+        return tags
+
+
+    def obtainImageInformation(self,postUrl:str=None):
+
+        url = postUrl if postUrl else self.url
+        rule = self.GainRules[self.rule_attrs[5]]
+        node_list = self.post_spider.urlParse(url=url,gainRuleCss=rule)
 
 class Danbooru:
     def __init__(self):
@@ -58,7 +71,5 @@ class Danbooru:
 def mainProcess():
 
     test_url = "https://danbooru.donmai.us/posts/7261490"
-    # test_url = "https://www.whatismyip.com.tw/"
-    # test_url="https://steamdb.info/"
-    p1 = PostPage()
-    p1.obtainImageInformation(test_url)
+    p1 = PostPage(test_url)
+    p1.obtainImageTags()
