@@ -1,64 +1,26 @@
 import tkinter as tk
 from Spiders import danbooru
+from gui.comm_ui import Input,TextArea
+import sys
 
-
-class Input(tk.Frame):
-    def __init__(self,master,name:str,content=None):
-        super().__init__(master)
-        self.pack(expand=True, fill="both")
-        self.name= name
-        self.content= content if content else ""
-        self.create_widgets()
-
-    def create_widgets(self):
-        '''
-        Label:标签控件,可以显示文本
-        Entry：输入控件，用于显示简单的文本内容
-        '''
-
-        self.label = tk.Label(self,
-                        wraplength=100,
-                        justify="left",
-                        anchor="w")
-        self.label["text"] = self.name + ":"
-        
-        self.label.pack(side="left")
-
-        # 绑定变量
-        self.var = tk.Variable()
-
-        self.entry = tk.Entry(self,textvariable=self.var) # show="*" 可以表示输入密码
-        self.entry.pack(side="right",expand=True,fill="x")
-        self.set_content(self.content)
-
-    def set_content(self, content:str):
-        self.var.set(content)
-
-    def get_content(self):
-        return self.entry.get()
-    
 
 
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.pack(expand=True, fill="both")
-
         self.create_widgets()
 
-    def getTags(self,event=None):
-        url = self.input.get_content()
-        # url = "https://danbooru.donmai.us/posts/7261490"
-        print(url)
-        p = danbooru.PostPage(url)
-        tags = p.obtainImageTags()
-        self.set_value_of_text(','.join(tags))
-
+        self.get_stdout_handle()
 
     def create_widgets(self):
         self.create_input("帖子网址")
-        self.create_text()
+        self.create_information_area()
         self.create_button()
+        self.create_log_area()
+
+        # testurl="https://danbooru.donmai.us/posts/7266628?q=order%3Arank"
+        # self.input.set_content(testurl)
 
 
     def create_input(self,name:str):
@@ -72,21 +34,64 @@ class Application(tk.Frame):
         # self.bt_quit.bind("<Button-1>",self.getTags)
         self.bt_quit.pack(side="bottom",pady="5px")
 
-    def create_text(self):
-        '''
-        文本控件：用于显示多行文本
-        '''
-        # height表示的是显示的行数
-        self.text = tk.Text(self)
+    def create_information_area(self):
+        self.info_area = tk.Frame(self)
+        self.artist = TextArea(self.info_area,"Artist",height=1)
+        self.copyright = TextArea(self.info_area,"Copyright",height=1)
+        self.tags = TextArea(self.info_area,"Tags")
+        self.information = TextArea(self.info_area,"Information",height=10)
 
-        self.text.pack(fill="both",pady="5px")
+        self.info_area.pack(fill="both",pady="5px")
 
-    def insert_to_text(self,value):
-        self.text.insert(tk.INSERT, value)
+    def create_log_area(self):
+        self.log_area = TextArea(self,"Log")
 
-    def set_value_of_text(self, value):
-        self.text.delete("1.0","end")
-        self.insert_to_text(value)
+    
+    def clear_info(self):
+        self.artist.clear_content()
+        self.copyright.clear_content()
+        self.tags.clear_content()
+        self.information.clear_content()
+
+    def getTags(self,event=None):
+        url = self.input.get_content()
+        if url is None or url == "":
+            print("网址为空，请输入网址!")
+        else:
+            # url = "https://danbooru.donmai.us/posts/7261490"
+            p = danbooru.PostPage(url)
+            artists = p.obtainImageArtists()
+            copyrights = p.obtainImageCopyrights()
+            characters = p.obtainImageCharacters()
+            generals = p.obtainImageGenerals()
+            Metas = p.obtainImageMetas()
+            informations=[]
+            dict_info = p.obtainImageInformation()
+            
+            for value in dict_info.values():
+                informations.append(value)
+            tags =characters+generals+Metas
+
+            self.clear_info()
+            if artists:
+                self.artist.set_content(",".join(artists))
+            if copyrights:
+                self.copyright.set_content(",".join(copyrights))
+            if tags:
+                self.tags.set_content(",".join(tags))
+            if informations:
+                self.information.set_content("\n".join(informations))
+
+
+
+    def get_stdout_handle(self):
+        sys.stdout = self.log_area
+
+
+    def __del__(self):
+        sys.stdout = self.log_area._console
+
+
 
 
 
@@ -96,6 +101,6 @@ def mainProcess():
     # 设置标题
     root.title("danbooru")
     # 设置大小和位置
-    root.geometry("400x400+200+50")
+    # root.geometry("400x400+200+50")
     app = Application(master=root)
     app.mainloop()

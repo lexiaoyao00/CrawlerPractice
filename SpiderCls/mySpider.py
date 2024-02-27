@@ -66,22 +66,37 @@ class SpiderBase():
         return requests.Response()
     
     # 拿到网页
-    def getPage(self,url:str,proxies=None,saveFlag = True,filename="test.html"):
+    def getPage(self,url:str,proxies=None,savefile = False,filename="mypage.html"):
         print("正在获取网页：",url)
         resContent = self.get(url=url,proxies=proxies)
         if resContent.text:
-            resContent.encoding = "utf-8"
-            if saveFlag:
+            print("已获取到网页内容")
+            if savefile:
+                resContent.encoding = "utf-8"
                 with open(filename,"w+",encoding="utf-8") as f:
                     f.write(resContent.text)
         else:
-            print("未获取到数据")
+            print("网页内容为空")
 
         return resContent
 
     # post方法
     def post(self,url,data=None, json=None,**kwargs):
         return self._session.post(url,data,json,**kwargs)
+
+
+    def pageParse(self,pageContent:requests.Response,encoding="utf-8",gainRuleCss=None):
+        gainRule = gainRuleCss if gainRuleCss else self._gainRule
+        pageContent.encoding = encoding
+        soup = BeautifulSoup(pageContent.text,"lxml")
+        if gainRule is None:
+            print("当前无解析选择器规则")
+            nodeList = []
+        else:
+            nodeList  = soup.select(gainRule)
+        # for node in nodeList:
+        #     print(node)
+        return nodeList
 
 
     # 解析
