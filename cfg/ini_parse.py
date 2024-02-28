@@ -26,4 +26,7 @@ class CfgOperation:
 
 
     def save(self,filename:str):
-        self._parser.write(open(filename, 'a',encoding='utf-8'))
+        self._parser.write(open(filename, 'a',encoding='utf-8'))\
+
+current_file_dir = os.path.dirname(__file__)
+mycfg_ini = CfgOperation(os.path.join(current_file_dir,"cfg_init.ini"))

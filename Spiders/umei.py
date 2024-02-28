@@ -1,12 +1,13 @@
-import cfg.ConfigurationOperation as mcf
+from cfg import config
 import SpiderCls.mySpider as myspi
 import os
 import time
-import requests
 from bs4 import BeautifulSoup
-import re
 from cmnFunc import myFunc as mf
 from concurrent.futures import ThreadPoolExecutor
+
+
+mcfg_ini = config.Config('ini').get_config()
 
 
 g_myHeaders = {
@@ -25,7 +26,7 @@ g_cfg = {
 def getCfg():
     """获取配置文件内容"""
     global g_cfg
-    conf = mcf.CfgOperation()
+    conf = mcfg_ini
     resourceDir = conf.get('DEAFULT','resourceDir')
     referer = conf.get('umei','referer')
     url = conf.get('umei','url')

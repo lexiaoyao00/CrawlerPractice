@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import re
 import os
 import random
-from cfg import ConfigurationOperation as mcf
 import time
 from cmnFunc import myFunc as mf
 import sys

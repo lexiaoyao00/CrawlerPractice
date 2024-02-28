@@ -1,13 +1,13 @@
-import cfg.ConfigurationOperation as mcf
+from cfg import config
 from SpiderCls.mySpider import SpiderBase
 from db.DBCls import Database as db
 from cmnFunc import myFunc as mf
-import requests
 import time
 import js2py
 import os
-import threading
 from concurrent.futures import ThreadPoolExecutor,as_completed
+
+mcfg_ini = config.Config('ini').get_config()
 
 #jb9网站js Base64.decode 返回decode函数
 def Base64DeCode(filename):
@@ -49,7 +49,7 @@ class JB9:
     # def creatSpider(self):
     #     spider = SpiderBase()
     def getCfg(self,section="DEAFULT"):
-        conf = mcf.CfgOperation()
+        conf = mcfg_ini
         self._config["outputDir"] = conf.get(section,"outputDir")
         self._config["referer"] = conf.get(section,"referer")
         self._config["url"] = conf.get(section,"url")

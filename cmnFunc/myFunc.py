@@ -1,12 +1,15 @@
 import os
 import SpiderCls.mySpider as myspi
 from bs4 import BeautifulSoup
-import cfg.ConfigurationOperation as mcf
+from cfg import config
 import requests
+
+mcfg_ini = config.Config("ini").get_config()
+mcfg_yaml = config.Config("yaml").get_config()
 
 def getproxyCgf(section = "proxy"):
     proxy_cfg ={}
-    conf = mcf.CfgOperation()
+    conf = mcfg_ini
     keys = conf.get_keys(section)
     for key in keys:
         proxy_cfg[key] = conf.get(section,key)
@@ -40,7 +43,7 @@ def getDBCfg(section="database"):
         'charset': ''
     }
 
-    conf = mcf.CfgOperation()
+    conf = mcfg_ini
     dbcfg['host'] = conf.get(section,'host')
     dbcfg['port'] = int(conf.get(section,'port'))
     dbcfg['user'] = conf.get(section,'user')
@@ -75,4 +78,5 @@ def creatSpiderAndParseBs4(url,headers=None):
 
 
 def testProscess():
-    getproxyCgf()
+    cfg = mcfg_ini.getInitCfg()
+    print(cfg)

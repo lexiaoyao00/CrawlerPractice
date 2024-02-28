@@ -1,0 +1,7 @@
+testint:123
+teststr:test
+testarr1:
+  - l1
+  - l2
+  - l3
+testarr2:[123,test,dasd]

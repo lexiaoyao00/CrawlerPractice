@@ -1,6 +1,4 @@
 from SpiderCls.mySpider import SpiderBase
-import cfg.ConfigurationOperation as mcf
-from cmnFunc import myFunc as mf
 
 class PostInfo:
     def __init__(self):
@@ -183,10 +181,3 @@ class Danbooru:
     def __init__(self):
         self.post_urls = []
 
-
-
-def mainProcess():
-
-    test_url = "https://danbooru.donmai.us/posts/7261490"
-    p1 = PostPage(test_url)
-    p1.obtainImageGenerals()

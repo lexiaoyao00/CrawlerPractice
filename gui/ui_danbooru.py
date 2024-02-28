@@ -23,8 +23,8 @@ class Application(tk.Frame):
         self.create_button()
         self.create_log_area()
 
-        testurl="https://danbooru.donmai.us/posts/7266628?q=order%3Arank"
-        self.input.set_content(testurl)
+        # testurl="https://danbooru.donmai.us/posts/7266628?q=order%3Arank"
+        # self.input.set_content(testurl)
 
 
     def create_input(self,name:str):
