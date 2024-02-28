@@ -6,6 +6,8 @@ import os
 import random
 from cfg import ConfigurationOperation as mcf
 import time
+from cmnFunc import myFunc as mf
+import sys
 
 
 user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",
@@ -65,7 +67,7 @@ class SpiderBase():
 
         return requests.Response()
     
-    # 拿到网页
+    # 拿到网页内容
     def getPage(self,url:str,proxies=None,savefile = False,filename="mypage.html"):
         print("正在获取网页：",url)
         resContent = self.get(url=url,proxies=proxies)
@@ -121,28 +123,67 @@ class SpiderBase():
         pass
 
     # 资源保存
-    def save(self,filename:str,fileContent=None):
-        if fileContent is None and self._response is None:
-            print("请先请求网址")
+    def save(self,filename:str,responseContent=None):
+        mf.creatDirOfFile(filename)
+        if responseContent is None and self._response is None:
+            print("请先请求网址，使用getPage方法")
             return
-        elif fileContent is None:
-            fileContent=self._response
+        elif responseContent is None:
+            responseContent=self._response
         else:
             pass
 
         with open(filename,'wb+') as f:
-            f.write(fileContent.content)
+            f.write(responseContent.content)
 
     #用来保存视频之类的大文件
-    def save_bigFlow(self,fielname:str,url:str,proxies=None,**kwargs):
+    def save_bigFlow(self,filename:str,url:str,proxies=None,**kwargs):
         r = self.get(url=url,proxies=proxies,stream = True,**kwargs)
-        f = open(fielname,'wb+')
+        f = open(filename,'wb+')
         for chunk in r.iter_content(chunk_size=512):
             if chunk:
                 f.write(chunk)
 
         f.close()
 
+    def download_from_url(self,filePath:str,url:str,proxies=None,**kwargs):
+        mf.creatDirOfFile(filePath)
+
+        res = self.get(url=url,proxies=proxies)
+        with open(filePath,'wb+') as f:
+            f.write(res.content)
+
+
+class Downloader(object):
+    def __init__(self, url, file_path):
+        self.url = url
+        self.file_path = file_path
+
+    def start(self):
+        res_length = requests.get(self.url, stream=True)
+        total_size = int(res_length.headers['Content-Length'])
+        print(res_length.headers)
+        print(res_length)
+        if os.path.exists(self.file_path):
+            temp_size = os.path.getsize(self.file_path)
+            print("当前：%d 字节， 总：%d 字节， 已下载：%2.2f%% " % (temp_size, total_size, 100 * temp_size / total_size))
+        else:
+            temp_size = 0
+            print("总：%d 字节，开始下载..." % (total_size,))
+
+        headers = {'Range': 'bytes=%d-' % temp_size,
+                   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:81.0) Gecko/20100101 Firefox/81.0"}
+        res_left = requests.get(self.url, stream=True, headers=headers)
+
+        with open(self.file_path, "ab") as f:
+            for chunk in res_left.iter_content(chunk_size=1024):
+                temp_size += len(chunk)
+                f.write(chunk)
+                f.flush()
+
+                done = int(50 * temp_size / total_size)
+                sys.stdout.write("\r[%s%s] %d%%" % ('█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
+                sys.stdout.flush()
 
 class SpiderSecend(SpiderBase):
     def initSpider(self,url):

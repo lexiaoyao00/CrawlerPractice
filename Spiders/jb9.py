@@ -268,7 +268,7 @@ class JB9:
                 filename = os.path.join(filepath,url.split("/")[-1])
             else:
                 filename = os.path.join(filepath,name)
-            spi_video.save_bigFlow(fielname=filename,url=url,proxies=proxies)
+            spi_video.save_bigFlow(filename=filename,url=url,proxies=proxies)
 
             return True
         except Exception as e:

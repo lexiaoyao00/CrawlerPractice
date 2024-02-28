@@ -59,7 +59,7 @@ def creatDir(floderPath:str):
         os.makedirs(floderPath)
 
 def creatDirOfFile(filePath:str):
-    if os.path.exists(filePath):
+    if os.path.exists(os.path.dirname(filePath)):
         return
     else:
         os.makedirs(os.path.dirname(filePath))

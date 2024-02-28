@@ -1,5 +1,6 @@
 import tkinter
 import sys
+from typing import Literal
 import datetime
 
 class Input(tkinter.Frame):
@@ -41,12 +42,13 @@ class Input(tkinter.Frame):
 class TextArea(tkinter.Frame):
     _console=sys.stdout
     
-    def __init__(self,master,name:str,content=None,height=5):
+    def __init__(self,master,name:str,content=None,height=5,state:Literal["normal","disabled"]="disabled"):
         super().__init__(master)
         self.pack(expand=True, fill="both",pady="5px")
         self.height=height
         self.name= name
         self.content= content if content else ""
+        self.state = state
         self.pack_widgets()
 
     def pack_widgets(self):
@@ -60,14 +62,21 @@ class TextArea(tkinter.Frame):
         
         self.label.pack(side="left")
 
-        self.text = tkinter.Text(self,height=self.height)
+        self.text = tkinter.Text(self,height=self.height,state=self.state)
 
         self.text.pack(expand=True,fill="both")
     
     def write(self,content:str):
         # nowtime = datetime.datetime.now()
         line =content
-        self.text.insert(tkinter.INSERT, line)
+        if self.state == "normal":
+            self.text.insert(tkinter.INSERT, line)
+        else:
+            self.text["state"] = "normal"
+            self.text.insert(tkinter.INSERT, line)
+            self.text.see(tkinter.END)
+            self.text["state"] = self.state
+
 
     def flush(self):
         pass
@@ -76,12 +85,24 @@ class TextArea(tkinter.Frame):
         sys.stdout=self._console
 
     def set_content(self, content:str):
-        self.text.delete("1.0","end")
-        self.text.insert(tkinter.INSERT,content)
+        if self.state == "normal":
+            self.text.delete("1.0","end")
+            self.text.insert(tkinter.INSERT,content)
+        else:
+            self.text["state"] = "normal"
+            self.text.delete("1.0","end")
+            self.text.insert(tkinter.INSERT, content)
+            self.text["state"] = self.state
 
-    def get_content(self):
-        self.content = self.text.get()
+
+    def get_content(self,index1=0.0, index2=tkinter.END):
+        self.content = self.text.get(index1,index2)
         return self.content
     
     def clear_content(self):
-        self.text.delete("1.0","end")
+        if self.state == "normal":
+            self.text.delete("1.0","end")
+        else:
+            self.text["state"] = "normal"
+            self.text.delete("1.0","end")
+            self.text["state"] = self.state
