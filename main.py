@@ -3,7 +3,12 @@ from cfg import config
 from cmnFunc import myFunc
 
 if __name__ == '__main__':
-    process = "danbooru"
+    cfgINI = config.Config('ini').get_Parser()
+    process = None
+    if cfgINI.has_section("initCfg"):
+        process = cfgINI.get("initCfg","ExecuteProgram")
+    else:
+        raise ValueError("配置文件参数出错")
     match process:
         case "patreon":
             from Spiders import patreon

@@ -3,17 +3,17 @@ from SpiderCls.mySpider import SpiderBase
 from db.DBCls import Database as db
 from cmnFunc import myFunc as mf
 import time
-import js2py
+from js2py import eval_js
 import os
 from concurrent.futures import ThreadPoolExecutor,as_completed
 
-mcfg_ini = config.Config('ini').get_config()
+mcfg_ini = config.Config('ini').get_Parser()
 
 #jb9网站js Base64.decode 返回decode函数
 def Base64DeCode(filename):
     with open(filename,'r',encoding='utf-8') as jsf:
         js = jsf.read()
-        b64 = js2py.eval_js(js)
+        b64 = eval_js(js)
         decode = b64.decode
         return decode
 

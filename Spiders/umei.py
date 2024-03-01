@@ -7,7 +7,7 @@ from cmnFunc import myFunc as mf
 from concurrent.futures import ThreadPoolExecutor
 
 
-mcfg_ini = config.Config('ini').get_config()
+mcfg_ini = config.Config('ini').get_Parser()
 
 
 g_myHeaders = {

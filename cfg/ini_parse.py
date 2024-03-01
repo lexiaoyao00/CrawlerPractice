@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import os
 
 class CfgOperation:
-    def __init__(self,path="./cfg/cfg_init.ini"):
+    def __init__(self,path:str):
         self._path = path
         self._parser = ConfigParser()
         self._parser.read(self._path,encoding='utf-8')

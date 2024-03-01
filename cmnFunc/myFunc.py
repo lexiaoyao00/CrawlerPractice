@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 from cfg import config
 import requests
 
-mcfg_ini = config.Config("ini").get_config()
-mcfg_yaml = config.Config("yaml").get_config()
+mcfg_ini = config.Config("ini").get_Parser()
+mcfg_yaml = config.Config("yaml").get_Parser()
 
 def getproxyCgf(section = "proxy"):
     proxy_cfg ={}

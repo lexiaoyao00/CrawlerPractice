@@ -62,7 +62,6 @@ class PostPage(PostInfo):
 
         return self.artists
 
-
     def obtainImageCopyrights(self):
         node_name = self.rule_attrs[1]
         node_rule = self.GainRules[node_name]
@@ -117,7 +116,6 @@ class PostPage(PostInfo):
 
         return self.metas
 
-
     def obtainImageInformation(self):
         node_name = self.rule_attrs[5]
         node_rule = self.GainRules[node_name]
@@ -170,12 +168,30 @@ class PostPage(PostInfo):
         self.img_information["Status"] = img_Status
 
         return self.img_information
-    
+
     def downloadImage(self):
         if self.img_information["Url"]:
             pass
         else:
             print("请先获取帖子信息")
+
+
+
+class PopulorPage():
+    def __init__(self,baseUrl,date,pageNum,scale):
+        self.base_url = baseUrl
+        self.params ={
+            "date":date,
+            "page":pageNum,
+            "scale":scale
+        }
+        self.populorPage_spider = SpiderBase()
+        self._setGainRules()
+        self.pageContent = self.populorPage_spider.getPage(self.url,savefile=True)
+
+    def _setGainRules(self):
+        print("PopulorPage 规则")
+        pass
 
 class Danbooru:
     def __init__(self):
