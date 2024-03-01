@@ -43,7 +43,13 @@ class PostPageApp(tk.Frame):
         self.bt_download = tk.Button(self.button_area)
         self.bt_download["text"] = "下载"
         self.bt_download["command"] = self.downloadPost
-        self.bt_download.pack(side="right",padx=10)
+        self.bt_download.pack(side="left",padx=10)
+
+        self.bt_filterImageGenerals = tk.Button(self.button_area)
+        self.bt_filterImageGenerals["text"] = "过滤标签"
+        self.bt_filterImageGenerals["command"] = self.filterPostGenerals
+        self.bt_filterImageGenerals.pack(side="left",padx=10)
+
 
 
         self.button_area.pack(side="bottom",pady="5px")
@@ -117,6 +123,18 @@ class PostPageApp(tk.Frame):
         else:
             print("请先获取信息")
 
+    def filterPostGenerals(self,event=None):
+        if self.post_obj:
+            try:
+                filte_tags = self.post_obj.filterImageTags()
+
+                if self.tags:
+                    self.tags.set_content(",".join(filte_tags))
+            except Exception as e:
+                print("Erro:",e)
+                print("过滤失败")
+        else:
+            print("请先获取信息")
 
     def get_stdout_handle(self):
         sys.stdout = self.log_area
@@ -152,6 +170,6 @@ def mainProcess():
     root.title("danbooru")
     # 设置大小和位置
     # root.geometry("400x400+200+50")
-    # app = PostPageApp(master=root)
-    app = PopulorPageApp(master=root)
+    app = PostPageApp(master=root)
+    # app = PopulorPageApp(master=root)
     app.mainloop()

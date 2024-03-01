@@ -16,6 +16,7 @@ if __name__ == '__main__':
         case "danbooru":
             from gui import ui_danbooru
             from Spiders import danbooru
+            # danbooru.mainProcess()
             ui_danbooru.mainProcess()
         case 'umei':
             from Spiders import umei

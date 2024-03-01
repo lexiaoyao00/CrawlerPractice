@@ -70,10 +70,10 @@ class TextArea(tkinter.Frame):
         # nowtime = datetime.datetime.now()
         line =content
         if self.state == "normal":
-            self.text.insert(tkinter.INSERT, line)
+            self.text.insert(tkinter.END, line)
         else:
             self.text["state"] = "normal"
-            self.text.insert(tkinter.INSERT, line)
+            self.text.insert(tkinter.END, line)
             self.text.see(tkinter.END)
             self.text["state"] = self.state
 

@@ -1,4 +1,4 @@
-from SpiderCls.mySpider import SpiderBase
+from Spiders import *
 
 class PostInfo:
     def __init__(self):
@@ -23,6 +23,7 @@ class PostInfo:
 
 
 class PostPage(PostInfo):
+    first_create_flag = True
     rule_attrs = [
         "artist",
         "copyright",
@@ -31,17 +32,23 @@ class PostPage(PostInfo):
         "meta",
         "img_information"
     ]
+    black_list = danbooru_black_list
+    GainRules = {}
 
 
     def __init__(self,postUrl:str):
         super(PostPage, self).__init__()
         self.url = postUrl
         self.post_spider = SpiderBase()
-        self._setGainRules()
         self.pageContent = self.post_spider.getPage(self.url)
 
+        if self.first_create_flag:
+            self._setGainRules()
+        
+
+        self.first_create_flag=False
+
     def _setGainRules(self):
-        self.GainRules = {}
         self.GainRules[self.rule_attrs[0]] = "ul.artist-tag-list li"
         self.GainRules[self.rule_attrs[1]] = "ul.copyright-tag-list li"
         self.GainRules[self.rule_attrs[2]] = "ul.character-tag-list li"
@@ -101,7 +108,7 @@ class PostPage(PostInfo):
             print(f"获取{node_name}节点为空:",node_rule)
         
         return self.generals
-    
+
     def obtainImageMetas(self):
         node_name = self.rule_attrs[4]
         node_rule = self.GainRules[node_name]
@@ -175,6 +182,28 @@ class PostPage(PostInfo):
         else:
             print("请先获取帖子信息")
 
+    def filterImageTags(self):
+        tags = self.characters + self.generals + self.metas
+        if self.black_list:
+            pass
+        else:
+            print('当前黑名单为空，无需过滤')
+            return
+
+        if tags:
+            filter_tags = tags
+            t_filtered_tags = []
+            for black_word in self.black_list:
+                while black_word in filter_tags:
+                    filter_tags.remove(black_word)
+                    t_filtered_tags.append(black_word)
+
+            print("成功过滤掉：",t_filtered_tags)
+
+        else:
+            print('"generals" 标签未获取，请重新获取')
+        
+        return filter_tags
 
 
 class PopulorPage():
@@ -197,3 +226,12 @@ class Danbooru:
     def __init__(self):
         self.post_urls = []
 
+
+def mainProcess():
+    testUrl1 = "https://danbooru.donmai.us/posts/7271107?q=ordfav%3Alexiaoyao"
+    testUrl2 = "https://danbooru.donmai.us/posts/7271686?q=ordfav%3Alexiaoyao"
+    p1 = PostPage(testUrl1)
+    g1 = p1.obtainImageGenerals()
+    g2 = p1.filterImageTags()
+    print("过滤前：",g1)
+    print("过滤后：",g2)

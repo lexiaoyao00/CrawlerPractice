@@ -63,7 +63,7 @@ class SpiderBase():
                 retry_count -=1
                 time.sleep(3)
                 print("尝试重新连接")
-
+        print("网页连接失败:",url)
         return requests.Response()
     
     # 拿到网页内容
@@ -77,7 +77,7 @@ class SpiderBase():
                 with open(filename,"w+",encoding="utf-8") as f:
                     f.write(resContent.text)
         else:
-            print("网页内容为空")
+            print("未获取到网页内容")
 
         return resContent
 
