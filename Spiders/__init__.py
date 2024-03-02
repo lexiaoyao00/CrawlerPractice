@@ -13,9 +13,23 @@ danbooru_rule_attrs = [
     "characters",
     "general",
     "meta",
-    "img_information"
+    "img_information",
+    "post_link"
 ]
-def danbooruCfg():
+
+
+def danbooruInitCfg():
+    danbooru_url = mcfg_ini_parser.get("danbooru", "referer")
+    if not danbooru_url:
+        print('ini配置文件出错，"danbooru" "referer" 项有问题，请检查')
+    populor_url = mcfg_ini_parser.get("danbooru", "populorUrl")
+    if not populor_url:
+        print('ini配置文件出错，"danbooru" "populorUrl" 键有问题，请检查')
+
+    return danbooru_url,populor_url
+
+
+def danbooruUserCfg():
     yaml_data = mcfg_yaml_parser.get_yaml()
     if yaml_data["danbooru"]:
         cfg_data = yaml_data["danbooru"]
@@ -25,4 +39,5 @@ def danbooruCfg():
     
     return cfg_data
 
-danbooru_black_list = danbooruCfg()["blackList"]
+danbooru_black_list = danbooruUserCfg()["blackList"]
+danbooru_url,populor_base_url = danbooruInitCfg()

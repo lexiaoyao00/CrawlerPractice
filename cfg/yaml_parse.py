@@ -22,7 +22,3 @@ class MyYAML():
 
 current_file_dir = os.path.dirname(__file__)
 mycfg_yaml = MyYAML(os.path.join(current_file_dir,"cfg_init.yaml"))
-
-def testpro():
-    yaml_data = mycfg_yaml.get_yaml()
-    print(yaml_data)

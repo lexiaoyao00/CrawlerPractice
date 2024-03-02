@@ -23,6 +23,7 @@ user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHT
 
 # 基本属性
 class SpiderBase():
+    complete_URL=""
     def __init__(self,gainRuleCss=None,headers=None):
         """
         gainRuleCss:CSS选择器规则
@@ -58,6 +59,7 @@ class SpiderBase():
         while retry_count>0:
             try:
                 self._response = self._session.get(url,headers=self._headers,proxies=proxies,impersonate="chrome116",**kwargs)
+                self.complete_URL = self._response.url
                 return self._response
             except Exception:
                 retry_count -=1
@@ -67,11 +69,11 @@ class SpiderBase():
         return requests.Response()
     
     # 拿到网页内容
-    def getPage(self,url:str,proxies=None,savefile = False,filename="mypage.html"):
+    def getPage(self,url:str,proxies=None,savefile = False,filename="mypage.html",**kwargs):
         print("正在获取网页：",url)
-        resContent = self.get(url=url,proxies=proxies)
+        resContent = self.get(url=url,proxies=proxies,**kwargs)
         if resContent.text:
-            print("已获取到网页内容")
+            print("网页内容已获取",self.complete_URL)
             if savefile:
                 resContent.encoding = "utf-8"
                 with open(filename,"w+",encoding="utf-8") as f:
@@ -101,9 +103,9 @@ class SpiderBase():
 
 
     # 解析
-    def urlParse(self,url,proxies=None,gainRuleCss = None):
+    def urlParse(self,url,proxies=None,gainRuleCss = None,**kwargs):
         gainRule = gainRuleCss if gainRuleCss else self._gainRule
-        resContent = self.get(url,proxies)
+        resContent = self.get(url,proxies,**kwargs)
         if resContent.status_code != 200:
             print("something went wrong,status code of response:",resContent.status_code)
             print("The problematic url:",url)
@@ -148,7 +150,7 @@ class SpiderBase():
     def download_from_url(self,filePath:str,url:str,proxies=None,**kwargs):
         mf.creatDirOfFile(filePath)
 
-        res = self.get(url=url,proxies=proxies)
+        res = self.get(url=url,proxies=proxies,**kwargs)
         with open(filePath,'wb+') as f:
             f.write(res.content)
 

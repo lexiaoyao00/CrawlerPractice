@@ -24,14 +24,7 @@ class PostInfo:
 
 class PostPage(PostInfo):
     first_create_flag = True
-    rule_attrs = [
-        "artist",
-        "copyright",
-        "characters",
-        "general",
-        "meta",
-        "img_information"
-    ]
+    rule_attrs = danbooru_rule_attrs[0:6]
     black_list = danbooru_black_list
     GainRules = {}
 
@@ -198,7 +191,10 @@ class PostPage(PostInfo):
                     filter_tags.remove(black_word)
                     t_filtered_tags.append(black_word)
 
-            print("成功过滤掉：",t_filtered_tags)
+            if t_filtered_tags:
+                print("成功过滤掉：",t_filtered_tags)
+            else:
+                print("过滤完成，没有内容被过滤掉")
 
         else:
             print('"generals" 标签未获取，请重新获取')
@@ -207,20 +203,53 @@ class PostPage(PostInfo):
 
 
 class PopulorPage():
-    def __init__(self,baseUrl,date,pageNum,scale):
+    first_create_flag = True
+    rule_attrs = danbooru_rule_attrs[6:]
+    GainRules = {}
+
+    post_attrs = ("href","preview_imgUrl")
+
+    def __init__(self,baseUrl=populor_base_url,date:str=None,pageNum:int|str=None,scale:str=None):
         self.base_url = baseUrl
         self.params ={
             "date":date,
-            "page":pageNum,
+            "page":str(pageNum),
             "scale":scale
         }
+        self.select_post={
+            self.post_attrs[0]:"",
+            self.post_attrs[1]:""
+        }
+        self.posts_info = []
         self.populorPage_spider = SpiderBase()
         self._setGainRules()
-        self.pageContent = self.populorPage_spider.getPage(self.url,savefile=True)
+        self.pageContent = self.populorPage_spider.getPage(self.base_url,savefile=False,params=self.params)
+
+        self.first_create_flag=False
 
     def _setGainRules(self):
-        print("PopulorPage 规则")
-        pass
+        self.GainRules[self.rule_attrs[0]] = "a.post-preview-link"
+
+    def obtainPostInfo(self):
+        node_name = self.rule_attrs[0]
+        node_rule = self.GainRules[node_name]
+        node_list = self.populorPage_spider.pageParse(pageContent=self.pageContent,gainRuleCss=node_rule)
+
+        if node_list:
+            for a in node_list:
+                self.select_post[self.post_attrs[0]] = danbooru_url + a["href"]
+                self.select_post[self.post_attrs[1]] = a.select_one("img")["src"]
+                # print(self.select_post)
+                
+                self.posts_info.append(self.select_post.copy()) # TODO:append为浅拷贝，所以这里不能直接用select_post
+
+            # print(self.posts_info)
+            # for i in self.posts_info:
+            #     print(i)
+        else:
+            print(f"获取{node_name}节点为空:",node_rule)
+
+        return self.posts_info
 
 class Danbooru:
     def __init__(self):
@@ -228,10 +257,7 @@ class Danbooru:
 
 
 def mainProcess():
-    testUrl1 = "https://danbooru.donmai.us/posts/7271107?q=ordfav%3Alexiaoyao"
-    testUrl2 = "https://danbooru.donmai.us/posts/7271686?q=ordfav%3Alexiaoyao"
-    p1 = PostPage(testUrl1)
-    g1 = p1.obtainImageGenerals()
-    g2 = p1.filterImageTags()
-    print("过滤前：",g1)
-    print("过滤后：",g2)
+    # testUrl1 = "https://danbooru.donmai.us/posts/7271107?q=ordfav%3Alexiaoyao"
+    # testUrl2 = "https://danbooru.donmai.us/posts/7271686?q=ordfav%3Alexiaoyao"
+    p1 = PopulorPage(date="2024-03-02",pageNum=2,scale="day")
+    p1.obtainPostInfo()
