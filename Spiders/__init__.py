@@ -1,4 +1,5 @@
 """各个网站的爬虫"""
+from SpiderCls.driverPlaywright import ChromeDriver
 from SpiderCls.mySpider import SpiderBase
 from cfg import config
 
@@ -17,6 +18,10 @@ danbooru_rule_attrs = [
     "post_link"
 ]
 
+def sstmInitCfg():
+    sstm_url = mcfg_ini_parser.get("sstm","referer")
+
+    return sstm_url
 
 def danbooruInitCfg():
     danbooru_url = mcfg_ini_parser.get("danbooru", "referer")
@@ -41,3 +46,5 @@ def danbooruUserCfg():
 
 danbooru_black_list = danbooruUserCfg()["blackList"]
 danbooru_url,populor_base_url = danbooruInitCfg()
+
+sstm_url = sstmInitCfg()

@@ -9,7 +9,12 @@ if __name__ == '__main__':
         process = cfgINI.get("initCfg","ExecuteProgram")
     else:
         raise ValueError("配置文件参数出错")
+    
+    process = "sstm" #TODO 测试用
     match process:
+        case "sstm":
+            from Spiders import sstm
+            sstm.mainProcess()
         case "patreon":
             from Spiders import patreon
             patreon.mainProcess()
