@@ -7,15 +7,16 @@ class ChromeDriver():
         self.url = url
         self.headless = headless
 
-        self.page = None
-    
-    def start(self):
+        self.__start()
+
+    def __start(self):
         self.playwright = sync_playwright().start()
         self.browser = self.playwright.chromium.launch(headless=self.headless)
-        self.page = self.browser.new_page()
+        self.context = self.browser.new_context()
+        self.page = self.context.new_page()
         self.page.goto(self.url)
 
-        return self.page
+        # return self.page
 
 
     def click(self,selector:str,**kwargs):
@@ -26,6 +27,8 @@ class ChromeDriver():
 
 
     def stop(self):
+        self.page.close()
+        self.context.close()
         self.browser.close()
         self.playwright.stop()
 

@@ -1,16 +1,25 @@
 import os
 from cfg import config
 from cmnFunc import myFunc
+import argparse
 
-if __name__ == '__main__':
-    cfgINI = config.Config('ini').get_Parser()
-    process = None
-    if cfgINI.has_section("initCfg"):
-        process = cfgINI.get("initCfg","ExecuteProgram")
-    else:
-        raise ValueError("配置文件参数出错")
-    
-    process = "sstm" #TODO 测试用
+parser = argparse.ArgumentParser()
+
+
+def getargs():
+    parser.add_argument("process")
+
+    return parser.parse_args()
+
+def main(process:str|None = None):
+    if process is None:
+        cfgINI = config.Config('ini').get_Parser()
+        if cfgINI.has_section("initCfg"):
+            process = cfgINI.get("initCfg","ExecuteProgram")
+        else:
+            raise ValueError("配置文件参数出错")
+
+    # process = "sstm" #TODO 测试用
     match process:
         case "sstm":
             from Spiders import sstm
@@ -34,3 +43,7 @@ if __name__ == '__main__':
         case _:
             print("未指定程序")
             os.system('pause')
+
+if __name__ == '__main__':
+    process = getargs().process
+    main(process)
