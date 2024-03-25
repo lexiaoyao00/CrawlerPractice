@@ -5,3 +5,5 @@ test.html
 /output/*
 *.sql
 /Packed
+/packed.bat
+/report.xml
