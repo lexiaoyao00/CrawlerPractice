@@ -9,3 +9,6 @@
 
 ## danbooru
 获取danbooru网站post信息标签
+
+## sstm
+自动签到
