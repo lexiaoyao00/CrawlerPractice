@@ -3,13 +3,13 @@ from cfg import config
 from cmnFunc import myFunc
 import argparse
 
-parser = argparse.ArgumentParser()
+argParser = argparse.ArgumentParser()
 
 
 def getargs():
-    parser.add_argument("process")
+    argParser.add_argument("--process",default=None,required=False)
 
-    return parser.parse_args()
+    return argParser.parse_args()
 
 def main(process:str|None = None):
     if process is None:
@@ -21,6 +21,9 @@ def main(process:str|None = None):
 
     # process = "sstm" #TODO 测试用
     match process:
+        case "missav":
+            from Spiders import missav
+            missav.mainProcess()
         case "sstm":
             from Spiders import sstm
             sstm.mainProcess()
@@ -42,7 +45,8 @@ def main(process:str|None = None):
             myFunc.testProscess()
         case _:
             print("未指定程序")
-            os.system('pause')
+    
+    os.system('pause')
 
 if __name__ == '__main__':
     process = getargs().process

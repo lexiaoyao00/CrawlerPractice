@@ -2,6 +2,7 @@
 from SpiderCls.driverPlaywright import ChromeDriver
 from SpiderCls.mySpider import SpiderBase
 from cfg import config
+from curl_cffi import requests
 
 mcfg_yaml_parser = config.Config("yaml").get_Parser()
 mcfg_ini_parser = config.Config("ini").get_Parser()
@@ -44,7 +45,15 @@ def danbooruUserCfg():
     
     return cfg_data
 
+def missavInitCfg():
+    missav_url = mcfg_ini_parser.get("missav","referer")
+
+    return missav_url
+
+
 danbooru_black_list = danbooruUserCfg()["blackList"]
 danbooru_url,populor_base_url = danbooruInitCfg()
 
 sstm_url = sstmInitCfg()
+
+missav_url = missavInitCfg()
